@@ -1,0 +1,77 @@
+---
+
+name: OIDC smoke test
+
+# THROWAWAY.  Proves quay.io robot federation works before PR #62 merges.
+# Delete this file and the temporary federation subject once it passes.
+on:
+  workflow_dispatch:
+    inputs:
+      robot:
+        description: "Robot account, e.g. containers+image_build"
+        type: string
+        required: true
+      repository:
+        description: "Repository to check push access on"
+        type: string
+        default: containers/podman
+
+permissions: {}
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      id-token: write
+    steps:
+      - name: Exchange OIDC token and prove access
+        env:
+          ROBOT: ${{ inputs.robot }}
+          REPO: ${{ inputs.repository }}
+        run: |
+          set -eo pipefail
+          unb64() {
+              local s="${1//-/+}"; s="${s//_//}"
+              while (( ${#s} % 4 )); do s="$s="; done
+              printf '%s' "$s" | base64 -d
+          }
+
+          OIDC=$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+              "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -r -e .value)
+          echo "::add-mask::$OIDC"
+
+          echo "### Subject this run presents to quay.io:"
+          unb64 "$(cut -d. -f2 <<<"$OIDC")" | jq '{sub, aud, iss}'
+
+          echo "### Exchanging for a robot token as '$ROBOT'"
+          TOK=$(curl -sSf "https://quay.io/oauth2/federation/robot/token" \
+              -u "$ROBOT:$OIDC" | jq -r -e .token)
+          echo "::add-mask::$TOK"
+          echo "Exchange succeeded."
+
+          echo "### Access granted on '$REPO':"
+          REG=$(curl -sSf -u "$ROBOT:$TOK" \
+              "https://quay.io/v2/auth?service=quay.io&scope=repository:${REPO}:pull,push" \
+              | jq -r -e .token)
+          echo "::add-mask::$REG"
+          unb64 "$(cut -d. -f2 <<<"$REG")" | jq '.access'
+
+          unb64 "$(cut -d. -f2 <<<"$REG")" \
+              | jq -e '.access[]? | select(.actions | index("push"))' >/dev/null \
+              || { echo "::error::token does NOT grant push on $REPO"; exit 1; }
+          echo "PUSH ACCESS CONFIRMED"
+
+      - name: Log in with podman
+        env:
+          ROBOT: ${{ inputs.robot }}
+        run: |
+          set -eo pipefail
+          OIDC=$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+              "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -r -e .value)
+          echo "::add-mask::$OIDC"
+          TOK=$(curl -sSf "https://quay.io/oauth2/federation/robot/token" \
+              -u "$ROBOT:$OIDC" | jq -r -e .token)
+          echo "::add-mask::$TOK"
+          podman login --username "$ROBOT" --password-stdin quay.io <<<"$TOK"
+          echo "PODMAN LOGIN OK"
