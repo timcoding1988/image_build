@@ -1,0 +1,13 @@
+---
+name: probe called
+on:
+  workflow_call: {}
+permissions: {}
+jobs:
+  called:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      id-token: write
+    steps:
+      - run: echo "called job ran"

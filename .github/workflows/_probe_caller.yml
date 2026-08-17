@@ -1,0 +1,8 @@
+---
+name: probe caller
+on:
+  workflow_dispatch: {}
+permissions: {}
+jobs:
+  caller:
+    uses: ./.github/workflows/_probe_called.yml
