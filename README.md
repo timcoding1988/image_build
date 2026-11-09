@@ -15,6 +15,8 @@ images are public and can be pulled without credentials.  These container images
 resulting containers can run safely with or without privileges.
 
 The container images are built using the latest Fedora and then the respective tools are installed.
+The Podman, Buildah, and AIO images include Git LFS so builds can fetch LFS-tracked
+files when a Containerfile uses `ADD` with a Git repository URL.
 The `$PATH` in the container images is set to the default provided by Fedora.  Neither the
 `$ENTRYPOINT` nor the `$WORKDIR` variables are set within these container images, and as
 such they default to `/`.

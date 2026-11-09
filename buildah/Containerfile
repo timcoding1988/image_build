@@ -34,7 +34,7 @@ LABEL "io.containers.capabilities"="CHOWN,DAC_OVERRIDE,FOWNER,FSETID,KILL,NET_BI
 RUN echo -e "\n\n# Added during image build" >> /etc/dnf/dnf.conf && \
     echo -e "minrate=100\ntimeout=60\n" >> /etc/dnf/dnf.conf
 
-ARG INSTALL_RPMS="buildah fuse-overlayfs cpp git-core ${SOURCE_DATE_EPOCH:+sqlite}"
+ARG INSTALL_RPMS="buildah fuse-overlayfs cpp git-core git-lfs ${SOURCE_DATE_EPOCH:+sqlite}"
 
 # Don't include container-selinux and remove
 # directories used by dnf that are just taking

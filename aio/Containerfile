@@ -20,7 +20,7 @@ ARG SOURCE_DATE_EPOCH
 RUN echo -e "\n\n# Added during image build" >> /etc/dnf/dnf.conf && \
     echo -e "minrate=100\ntimeout=60\n" >> /etc/dnf/dnf.conf
 
-ARG INSTALL_RPMS="podman buildah skopeo fuse-overlayfs openssh-clients cpp git-core ${SOURCE_DATE_EPOCH:+sqlite}"
+ARG INSTALL_RPMS="podman buildah skopeo fuse-overlayfs openssh-clients cpp git-core git-lfs ${SOURCE_DATE_EPOCH:+sqlite}"
 
 RUN microdnf -y makecache && \
     microdnf -y update && \

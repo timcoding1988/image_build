@@ -63,6 +63,10 @@ trap "podman unshare rm -rf '$TMPD'" EXIT
 msg "Loading test image"
 showrun podman load -i $HOME/$FQIN_FILE
 
+msg "Verify Git LFS is installed and configured in $FQIN"
+showrun podman run --rm $FQIN git lfs version
+showrun podman run --rm $FQIN git config --system --get filter.lfs.process
+
 # These tests come directly from the aio/README.md examples
 mkdir $TMPD/cntr_storage
 mkdir $TMPD/context
